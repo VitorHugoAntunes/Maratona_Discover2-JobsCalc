@@ -13,7 +13,7 @@ const Profile = {
         "vacation-per-year": 4,
         "value-hour": 75,
     },
-    
+
     controllers: {
         index(req, res){
             res.render(views + "profile", { profile: Profile.data })
@@ -56,14 +56,14 @@ const Job = {
             name: "Pizzaria Guloso",
             "daily-hours": 2,
             "total-hours": 1,
-            created_at: Date.now()
+            created_at: Date.now(),
         },
         {
             id: 2,
             name: "OneTwo Project",
             "daily-hours": 3,
             "total-hours": 47,
-            created_at: Date.now()
+            created_at: Date.now(),
         },
     ],
     controllers: {
@@ -76,7 +76,7 @@ const Job = {
                     ...job,
                     remaining,
                     status,
-                    budget: Profile.data["value-hour"] * job["total-hours"]
+                    budget: Job.services.calculateBudget(job, Profile.data["value-hour"])
                 }
             })
         
@@ -86,7 +86,7 @@ const Job = {
            return res.render(views + "job")
         },
         save(req, res) {
-            const lastId = Job.data[Job.data.length - 1]?.id || 1; // Verificando se ha algum elemento no array, caso nao, atribui id 1 ao primeiro elemento
+            const lastId = Job.data[Job.data.length - 1]?.id || 0; // Verificando se ha algum elemento no array, caso nao, atribui id 1 ao primeiro elemento
      
             Job.data.push({
                 id: lastId + 1, // atribuindo + 1 no id dos proximos elementos
@@ -95,6 +95,54 @@ const Job = {
                 "total-hours": req.body["total-hours"],
                 created_at: Date.now() // Atribuindo a data de quando o job foi criado
             })
+
+            return res.redirect('/')
+        },
+        show(req, res) {
+            const jobId = req.params.id
+
+            const job = Job.data.find(job => Number(job.id) === Number(jobId)) // Buscando o id de job e verificando se bate com o id da Url (jobId), se true, atribui a variavel Job
+            
+            if(!job) {
+                return res.send('Job not found!')
+            }
+
+            job.budget = Job.services.calculateBudget(job, Profile.data["value-hour"])
+
+            res.render(views + "job-edit", { job })
+        },
+
+        update(req, res){
+            const jobId = req.params.id
+
+            const job = Job.data.find(job => Number(job.id) === Number(jobId)) // Buscando o id de job e verificando se bate com o id da Url (jobId), se true, atribui a variavel Job
+            
+            if(!job) {
+                return res.send('Job not found!')
+            }
+
+            const updatedJob = {
+                ...job,
+                name: req.body.name,
+                "total-hours": req.body["total-hours"],
+                "daily-hours": req.body["daily-hours"],
+            }
+
+            Job.data = Job.data.map(job => {
+                if(Number(job.id) === Number(jobId)) {
+                    job = updatedJob
+                }
+
+                return job
+            })
+
+            res.redirect('/job/' + jobId)
+        },
+
+        delete(req, res) {
+            const jobId = req.params.id
+
+            Job.data = Job.data.filter(job => Number(job.id) !== Number(jobId))
 
             return res.redirect('/')
         }
@@ -121,7 +169,8 @@ const Job = {
         
             // restam x dias
             return dayDifference
-        }
+        },
+        calculateBudget: (job, valueHour) => valueHour * job["total-hours"]
     }
 }
 
@@ -130,7 +179,9 @@ routes.get('/', Job.controllers.index);
 routes.get('/job', Job.controllers.create);
 routes.post('/job', Job.controllers.save);
 
-routes.get('/job/edit', (req, res) => res.render(views + "job-edit"));
+routes.get('/job/:id', Job.controllers.show);
+routes.post('/job/:id', Job.controllers.update);
+routes.post('/job/delete/:id', Job.controllers.delete);
 
 routes.get('/profile', Profile.controllers.index);
 routes.post('/profile', Profile.controllers.update);
