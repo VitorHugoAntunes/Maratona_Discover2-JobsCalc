@@ -1,53 +1,6 @@
 const express = require("express")
 const routes = express.Router()
-
-const views = __dirname + "/views/"
-
-const Profile = {
-    data: {
-        name: "Vitor Hugo",
-        avatar: "https://avatars.githubusercontent.com/u/51717305?v=4",
-        "monthly-budget": 3000,
-        "days-per-week": 5,
-        "hours-per-day": 5,
-        "vacation-per-year": 4,
-        "value-hour": 75,
-    },
-
-    controllers: {
-        index(req, res){
-            res.render(views + "profile", { profile: Profile.data })
-        },
-
-        update(req, res) {
-            // req.body para pegar os dados
-            const data = req.body
-            
-            // Definir quantas semanas tem em um ano
-            const weeksPerYear = 52
-
-            // Remover as semanas de ferias do ano, para pegar quantas semanas tem em um mes
-            const weeksPerMonth = (weeksPerYear - data["vacation-per-year"]) / 12
-
-            // total de horas trabalhadas na semanas
-            const weekTotalHours = data["hours-per-day"] * data["days-per-week"]
-
-            // horas trabalhadas no mes
-            const monthlyTotalHours = weekTotalHours * weeksPerMonth
-
-            // Qual sera o valor da minha horas
-            const valueHour =  data["monthly-budget"] / monthlyTotalHours
-
-            Profile.data = {
-                ...Profile.data,
-                ...req.body,
-                "value-hour": valueHour
-            }
-
-            return res.redirect('/profile')
-        }
-    }
-}
+const ProfileController = require("./controllers/ProfileController")
 
 const Job = {
     data: [
@@ -80,10 +33,10 @@ const Job = {
                 }
             })
         
-            return res.render(views + "index", { jobs: updatedJobs })  
+            return res.render("index", { jobs: updatedJobs })  
         },
         create(req, res){
-           return res.render(views + "job")
+           return res.render("job")
         },
         save(req, res) {
             const lastId = Job.data[Job.data.length - 1]?.id || 0; // Verificando se ha algum elemento no array, caso nao, atribui id 1 ao primeiro elemento
@@ -109,7 +62,7 @@ const Job = {
 
             job.budget = Job.services.calculateBudget(job, Profile.data["value-hour"])
 
-            res.render(views + "job-edit", { job })
+            res.render("job-edit", { job })
         },
 
         update(req, res){
@@ -183,7 +136,7 @@ routes.get('/job/:id', Job.controllers.show);
 routes.post('/job/:id', Job.controllers.update);
 routes.post('/job/delete/:id', Job.controllers.delete);
 
-routes.get('/profile', Profile.controllers.index);
-routes.post('/profile', Profile.controllers.update);
+routes.get('/profile', ProfileController.index);
+routes.post('/profile', ProfileController.update);
 
 module.exports = routes;
