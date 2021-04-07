@@ -10,7 +10,7 @@ module.exports = {
         const jobs = Job.get()
         const lastId = jobs[jobs.length - 1]?.id || 0; // Verificando se ha algum elemento no array, caso nao, atribui id 1 ao primeiro elemento
  
-        jobs.push({
+        Job.create({
             id: lastId + 1, // atribuindo + 1 no id dos proximos elementos
             name: req.body.name,
             "daily-hours": req.body["daily-hours"],
